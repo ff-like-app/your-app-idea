@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Check, FileJson, Download, X } from "lucide-react";
+import { Copy, Check, FileJson, Download, X, Zap, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { GuestAccount } from "@/types/account";
 import { generateGuestJson } from "@/lib/parser";
@@ -7,9 +7,20 @@ import { generateGuestJson } from "@/lib/parser";
 interface ExportPanelProps {
   account: GuestAccount | null;
   onClose: () => void;
+  isNative: boolean;
+  hasPermission: boolean;
+  isLoading: boolean;
+  onInject: (account: GuestAccount) => Promise<boolean>;
 }
 
-const ExportPanel = ({ account, onClose }: ExportPanelProps) => {
+const ExportPanel = ({ 
+  account, 
+  onClose, 
+  isNative, 
+  hasPermission, 
+  isLoading, 
+  onInject 
+}: ExportPanelProps) => {
   const [copied, setCopied] = useState(false);
 
   if (!account) return null;
@@ -30,6 +41,10 @@ const ExportPanel = ({ account, onClose }: ExportPanelProps) => {
     a.download = `guest_${account.uid}.dat`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleInject = async () => {
+    await onInject(account);
   };
 
   return (
@@ -62,11 +77,34 @@ const ExportPanel = ({ account, onClose }: ExportPanelProps) => {
           </div>
 
           {/* JSON preview */}
-          <pre className="p-3 rounded-lg bg-background/50 border border-border/30 text-xs font-mono text-foreground/80 overflow-x-auto mb-4 max-h-32 overflow-y-auto">
+          <pre className="p-3 rounded-lg bg-background/50 border border-border/30 text-xs font-mono text-foreground/80 overflow-x-auto mb-4 max-h-24 overflow-y-auto">
             {jsonOutput}
           </pre>
 
-          {/* Actions */}
+          {/* Native inject button */}
+          {isNative && hasPermission && (
+            <motion.button
+              onClick={handleInject}
+              disabled={isLoading}
+              whileHover={{ scale: isLoading ? 1 : 1.02 }}
+              whileTap={{ scale: isLoading ? 1 : 0.98 }}
+              className="w-full mb-3 py-3 rounded-xl bg-gradient-to-r from-primary via-secondary to-accent text-background font-display font-bold shadow-lg shadow-primary/25 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Injecting...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-5 h-5" />
+                  INJECT TO DEVICE
+                </>
+              )}
+            </motion.button>
+          )}
+
+          {/* Web actions */}
           <div className="flex gap-3">
             <motion.button
               onClick={handleCopy}
@@ -100,7 +138,10 @@ const ExportPanel = ({ account, onClose }: ExportPanelProps) => {
 
           {/* Hint */}
           <p className="mt-3 text-xs text-muted-foreground text-center">
-            Copy this JSON and paste it into your guest.dat file
+            {isNative && hasPermission 
+              ? "Tap INJECT to write directly to your guest file"
+              : "Copy this JSON and paste it into your guest.dat file"
+            }
           </p>
         </div>
       </motion.div>
