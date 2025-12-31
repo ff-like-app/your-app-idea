@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.7628c16cbb10431099d45d2dedb0dbdb',
+  appId: "com.r1.guestmanager",
   appName: 'R1 Guest Manager',
   webDir: 'dist',
   server: {
