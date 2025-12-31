@@ -10,9 +10,11 @@ import EmptyState from "@/components/EmptyState";
 import AddAccountModal from "@/components/AddAccountModal";
 import ImportModal from "@/components/ImportModal";
 import ExportPanel from "@/components/ExportPanel";
+import FilePathConfig from "@/components/FilePathConfig";
 
 import { GuestAccount } from "@/types/account";
 import { loadAccounts, saveAccounts } from "@/lib/storage";
+import { useFileSystem } from "@/hooks/useFileSystem";
 
 const Index = () => {
   const [accounts, setAccounts] = useState<GuestAccount[]>([]);
@@ -20,6 +22,19 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+
+  // File system hook for native Android access
+  const {
+    isNative,
+    hasPermission,
+    isLoading,
+    guestFilePath,
+    guestFiles,
+    setGuestFilePath,
+    requestStoragePermission,
+    injectAccount,
+    refreshGuestFiles
+  } = useFileSystem();
 
   // Load accounts from localStorage on mount
   useEffect(() => {
@@ -70,6 +85,10 @@ const Index = () => {
     setSelectedId((prev) => (prev === id ? null : id));
   };
 
+  const handleInjectAccount = async (account: GuestAccount): Promise<boolean> => {
+    return await injectAccount(account);
+  };
+
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
       {/* Background decorative elements */}
@@ -82,6 +101,19 @@ const Index = () => {
         <Header />
 
         <main className="flex-1 flex flex-col pb-32">
+          {/* File path configuration for native Android */}
+          {isNative && (
+            <FilePathConfig
+              currentPath={guestFilePath}
+              onPathChange={setGuestFilePath}
+              guestFiles={guestFiles}
+              hasPermission={hasPermission}
+              onRequestPermission={requestStoragePermission}
+              onRefresh={refreshGuestFiles}
+              isLoading={isLoading}
+            />
+          )}
+
           {accounts.length === 0 ? (
             <EmptyState
               onAddClick={() => setShowAddModal(true)}
@@ -143,6 +175,10 @@ const Index = () => {
         <ExportPanel
           account={selectedAccount}
           onClose={() => setSelectedId(null)}
+          isNative={isNative}
+          hasPermission={hasPermission}
+          isLoading={isLoading}
+          onInject={handleInjectAccount}
         />
       )}
     </div>
